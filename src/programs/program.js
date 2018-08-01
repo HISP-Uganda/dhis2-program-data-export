@@ -102,10 +102,89 @@ class Program extends React.Component {
     }
 
     render() {
-        const {classes, d2} = this.props;
+        const {classes} = this.props;
         let progress = '';
+        let selection = '';
+
         if (this.integrationStore.loading) {
             progress = <LinearProgress variant="indeterminate"/>;
+        }
+
+        if (this.integrationStore.program !== null) {
+            let current = '';
+            if (this.integrationStore.selectedStage !== null) {
+                current = <div>
+                    <InputField
+                        id="filter"
+                        label="Filter"
+                        type="text"
+                        fullWidth
+                        value={this.integrationStore.dataElementFilterText}
+                        onChange={(value) => this.integrationStore.dataElementFilterChange(value)}
+                    />
+
+                    <GroupEditor
+                        itemStore={this.integrationStore.dataElementStore}
+                        assignedItemStore={this.integrationStore.currentDataElementStore}
+                        onAssignItems={this.integrationStore.assignDataElements}
+                        onRemoveItems={this.integrationStore.unAssignDataElements}
+                        height={150}
+                        filterText={this.integrationStore.dataElementFilterText}
+                    />
+                </div>;
+            }
+            selection = <Tabs>
+                <Tab label='Attributes'>
+                    <InputField
+                        id="filter"
+                        label="Filter"
+                        type="text"
+                        fullWidth
+                        value={this.integrationStore.filterText}
+                        onChange={(value) => this.integrationStore.filterChange(value)}
+                    />
+                    <GroupEditor
+                        itemStore={this.integrationStore.itemStore}
+                        assignedItemStore={this.integrationStore.assignedItemStore}
+                        onAssignItems={this.integrationStore.assignItems}
+                        onRemoveItems={this.integrationStore.unAssignItems}
+                        height={150}
+                        filterText={this.integrationStore.filterText}
+                    />
+                </Tab>
+                <Tab label='Data Elements'>
+                    <br/>
+                    <Select
+                        placeholder="Select one"
+                        value={this.integrationStore.selectedStage}
+                        options={this.integrationStore.programStages}
+                        labelKey="displayName"
+                        onChange={this.integrationStore.handleStageChange}
+                    />
+
+                    {current}
+
+                </Tab>
+
+                <Tab label='Other Columns'>
+                    <InputField
+                        id="filter"
+                        label="Filter"
+                        type="text"
+                        fullWidth
+                        value={this.integrationStore.filterOtherText}
+                        onChange={(value) => this.integrationStore.otherFilterChange(value)}
+                    />
+                    <GroupEditor
+                        itemStore={this.integrationStore.otherColumnStore}
+                        assignedItemStore={this.integrationStore.assignedOtherColumnStore}
+                        onAssignItems={this.integrationStore.assignOtherColumns}
+                        onRemoveItems={this.integrationStore.unAssignOtherColumns}
+                        height={150}
+                        filterText={this.integrationStore.filterOtherText}
+                    />
+                </Tab>
+            </Tabs>;
         }
         return (
             <div>
@@ -128,73 +207,7 @@ class Program extends React.Component {
                                     Attributes</Typography>
                             </ExpansionPanelSummary>
                             <ExpansionPanelDetails className={classes.block}>
-                                <Tabs>
-                                    <Tab label='Attributes'>
-                                        <InputField
-                                            id="filter"
-                                            label="Filter"
-                                            type="text"
-                                            fullWidth
-                                            value={this.integrationStore.filterText}
-                                            onChange={(value) => this.integrationStore.filterChange(value)}
-                                        />
-                                        <GroupEditor
-                                            itemStore={this.integrationStore.itemStore}
-                                            assignedItemStore={this.integrationStore.assignedItemStore}
-                                            onAssignItems={this.integrationStore.assignItems}
-                                            onRemoveItems={this.integrationStore.unAssignItems}
-                                            height={150}
-                                            filterText={this.integrationStore.filterText}
-                                        />
-                                    </Tab>
-                                    <Tab label='Data Elements'>
-                                        <br/>
-                                        <Select
-                                            placeholder="Select one"
-                                            value={this.integrationStore.selectedStage}
-                                            options={this.integrationStore.programStages}
-                                            labelKey="displayName"
-                                            onChange={this.integrationStore.handleStageChange}
-                                        />
-
-                                        <InputField
-                                            id="filter"
-                                            label="Filter"
-                                            type="text"
-                                            fullWidth
-                                            value={this.integrationStore.dataElementFilterText}
-                                            onChange={(value) => this.integrationStore.dataElementFilterChange(value)}
-                                        />
-
-                                        <GroupEditor
-                                            itemStore={this.integrationStore.dataElementStore}
-                                            assignedItemStore={this.integrationStore.assignedDataElementStore}
-                                            onAssignItems={this.integrationStore.assignDataElements}
-                                            onRemoveItems={this.integrationStore.unAssignDataElements}
-                                            height={150}
-                                            filterText={this.integrationStore.dataElementFilterText}
-                                        />
-                                    </Tab>
-
-                                    <Tab label='Other Columns'>
-                                        <InputField
-                                            id="filter"
-                                            label="Filter"
-                                            type="text"
-                                            fullWidth
-                                            value={this.integrationStore.filterOtherText}
-                                            onChange={(value) => this.integrationStore.otherFilterChange(value)}
-                                        />
-                                        <GroupEditor
-                                            itemStore={this.integrationStore.otherColumnStore}
-                                            assignedItemStore={this.integrationStore.assignedOtherColumnStore}
-                                            onAssignItems={this.integrationStore.assignOtherColumns}
-                                            onRemoveItems={this.integrationStore.unAssignOtherColumns}
-                                            height={150}
-                                            filterText={this.integrationStore.filterOtherText}
-                                        />
-                                    </Tab>
-                                </Tabs>
+                                {selection}
                                 <br/>
                             </ExpansionPanelDetails>
                         </ExpansionPanel>
