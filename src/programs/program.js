@@ -16,11 +16,7 @@ import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import ExportTable from './exportTable';
 
 import PropTypes from 'prop-types';
-
-
 // import Table from '@dhis2/d2-ui-table';
-
-
 const styles = theme => ({
     root: {
         flexGrow: 1,
@@ -155,7 +151,7 @@ class Program extends React.Component {
                 <Tab label='Data Elements'>
                     <br/>
                     <Select
-                        placeholder="Select one"
+                        placeholder="Select stage"
                         value={this.integrationStore.selectedStage}
                         options={this.integrationStore.programStages}
                         labelKey="displayName"
@@ -192,7 +188,7 @@ class Program extends React.Component {
                 <div style={stylesx.div}>
                     <div zdepth={3} style={stylesx.paperLeft}>
                         <Select
-                            placeholder="Select one"
+                            placeholder="Select program"
                             value={this.integrationStore.program}
                             options={this.integrationStore.programs}
                             labelKey="displayName"
@@ -259,7 +255,7 @@ class Program extends React.Component {
                             variant="contained"
                             color="primary"
                             onClick={this.integrationStore.downloadData}>
-                            Download
+                            {this.integrationStore.downloadLabel}
                         </Button>
                         <ExportTable/>
                     </div>

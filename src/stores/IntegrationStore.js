@@ -108,6 +108,7 @@ class IntegrationStore {
     @observable selectedAttributes = [];
     @observable selectedElements = {};
     @observable selectedOthers = [];
+    @observable downloadLabel = 'Download'
 
     constructor() {
         this.itemStore.state = [];
@@ -438,7 +439,7 @@ class IntegrationStore {
         let view = this.sqlViews['analytics'];
         this.rows = [];
         this.headers = [];
-        this.rowsPerPage = 12;
+        this.rowsPerPage = 10;
         this.page = 0;
         if (view !== null && view !== undefined && view !== '') {
             api.get('sqlViews/' + view).then(action(sqlView => {
@@ -473,8 +474,9 @@ class IntegrationStore {
 
     @action downloadData = () => {
         const rowSize = (new TextEncoder('utf-8').encode(this.rows[0])).length;
-        const rowsToFetchAndDownload = Math.floor((50 * 1024 * 1024) / (4 * rowSize));
+        const rowsToFetchAndDownload = Math.floor((30 * 1024 * 1024) / (4 * rowSize));
         const numberOfPages = Math.ceil(this.total / rowsToFetchAndDownload);
+        this.downloadLabel = 'Downloading ' + numberOfPages + ' files';
         for (let i = 1; i <= numberOfPages; i++) {
             this.fetch(this.sqlViews['analytics'], i, rowsToFetchAndDownload);
         }
