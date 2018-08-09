@@ -41,7 +41,7 @@ class IntegrationStore {
     @observable assignedItemStore = Store.create();
 
     @observable dataElementStore = Store.create();
-    @observable assignedDataElementStore = Store.create();
+    @observable assignedDataElementStore = {};
 
     @observable otherColumnStore = Store.create();
     @observable assignedOtherColumnStore = Store.create();
@@ -106,8 +106,9 @@ class IntegrationStore {
     @observable expanded;
     @observable period;
     @observable selectedAttributes = [];
-    @observable selectedElements = [];
+    @observable selectedElements = {};
     @observable selectedOthers = [];
+    @observable downloadLabel = 'Download'
 
     constructor() {
         this.itemStore.state = [];
@@ -148,6 +149,18 @@ class IntegrationStore {
             });
             program.programStages = program.programStages.toArray();
             program.organisationUnits = program.organisationUnits.toArray();
+
+            let stores = {};
+            let elements = {};
+
+            program.programStages.forEach(stage => {
+                const store = Store.create();
+                store.state = [];
+                stores = {...stores, ..._.fromPairs([[stage.id, store]])};
+                elements = {...elements, ..._.fromPairs([[stage.id, []]])}
+            });
+            this.selectedElements = elements;
+            this.assignedDataElementStore = stores;
 
             const items = program.programTrackedEntityAttributes.map(attribute => {
                 return {text: attribute.displayName, value: attribute.id};
@@ -324,18 +337,18 @@ class IntegrationStore {
     };
 
     @action assignDataElements = (items) => {
-        const assigned = this.assignedDataElementStore.state.concat(items);
-        this.assignedDataElementStore.setState(assigned);
-        this.selectedElements = assigned;
+        const assigned = this.assignedDataElementStore[this.selectedStage.id].state.concat(items);
+        this.assignedDataElementStore[this.selectedStage.id].setState(assigned);
+        this.selectedElements[this.selectedStage.id] = assigned;
         return Promise.resolve();
     };
 
     @action unAssignDataElements = (items) => {
-        const assigned = this.assignedDataElementStore
+        const assigned = this.assignedDataElementStore[this.selectedStage.id]
             .state
             .filter(item => items.indexOf(item) === -1);
-        this.assignedDataElementStore.setState(assigned);
-        this.selectedElements = assigned;
+        this.assignedDataElementStore[this.selectedStage.id].setState(assigned);
+        this.selectedElements[this.selectedStage.id] = assigned;
         return Promise.resolve();
     };
 
@@ -426,7 +439,7 @@ class IntegrationStore {
         let view = this.sqlViews['analytics'];
         this.rows = [];
         this.headers = [];
-        this.rowsPerPage = 15;
+        this.rowsPerPage = 10;
         this.page = 0;
         if (view !== null && view !== undefined && view !== '') {
             api.get('sqlViews/' + view).then(action(sqlView => {
@@ -461,8 +474,9 @@ class IntegrationStore {
 
     @action downloadData = () => {
         const rowSize = (new TextEncoder('utf-8').encode(this.rows[0])).length;
-        const rowsToFetchAndDownload = Math.floor((50 * 1024 * 1024) / (4 * rowSize));
+        const rowsToFetchAndDownload = Math.floor((30 * 1024 * 1024) / (4 * rowSize));
         const numberOfPages = Math.ceil(this.total / rowsToFetchAndDownload);
+        this.downloadLabel = 'Downloading ' + numberOfPages + ' files';
         for (let i = 1; i <= numberOfPages; i++) {
             this.fetch(this.sqlViews['analytics'], i, rowsToFetchAndDownload);
         }
@@ -518,25 +532,36 @@ class IntegrationStore {
 
         const otherColumnString = otherColumns.join(',');
         let attributeString = '';
-        let dataElementString = '';
+        let elementsArray = [];
 
-        if (this.isTracker) {
+        if (this.isTracker && this.selectedStage !== null) {
             table = 'analytics_enrollment_' + this.program.id;
 
             attributeString = attributes.map(a => {
                 return '"' + a + '"';
             }).join(',');
 
-            dataElementString = dataElements.map(element => {
-                return '"' + this.selectedStage.id + '_' + element + '"';
-            }).join(',');
+            _.forOwn(dataElements, (e, s) => {
+                if (e.length > 0) {
+                    const r = e.map(element => {
+                        return '"' + s + '_' + element + '"';
+                    }).join(',');
+                    elementsArray = [...elementsArray, r];
+                }
+            });
 
 
         } else if (this.program !== null) {
             table = 'analytics_event_' + this.program.id;
-            dataElementString = dataElements.map(e => {
-                return '"' + e + '"';
-            }).join(',');
+
+            _.forOwn(dataElements, e => {
+                if (e.length > 0) {
+                    const r = e.map(el => {
+                        return '"' + el + '"';
+                    }).join(',');
+                    elementsArray = [...elementsArray, r];
+                }
+            });
         }
 
         if (attributeString !== null && attributeString !== '') {
@@ -547,8 +572,8 @@ class IntegrationStore {
             finalColumns = [...finalColumns, otherColumnString];
         }
 
-        if (dataElementString !== null && dataElementString !== '') {
-            finalColumns = [...finalColumns, dataElementString];
+        if (elementsArray.length > 0) {
+            finalColumns = [...finalColumns, elementsArray.join(',')];
         }
 
         if (finalColumns.length > 0) {
@@ -560,6 +585,10 @@ class IntegrationStore {
 
     @computed get canDownload() {
         return this.rows.length > 0;
+    }
+
+    @computed get currentDataElementStore() {
+        return this.assignedDataElementStore[this.selectedStage.id];
     }
 
     @computed get canUpdate() {
